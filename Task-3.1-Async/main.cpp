@@ -10,23 +10,6 @@
 #include <vector>
 #include <climits>
 
-void sort_arr(int *arr, int size) {
-    int i, j, min;
-    for (i = 0; i < size - 1; i++) {
-        min = i;
-        for (j = i + 1; j < size; j++) {
-            if (arr[j] < arr[min]) {
-                min = j;
-            }
-        }
-        
-        if(min != i) {
-            std::swap(arr[min],arr[i]);
-        }
-        
-    }
-}
-
 int min_el(int *arr, int size,int start_i, std::promise<int> &pr) {
     int min = INT_MAX;
     
@@ -36,8 +19,34 @@ int min_el(int *arr, int size,int start_i, std::promise<int> &pr) {
         }
     }
     
+    std::cout << "Если индекс начала поиска равен " << start_i << ", то минимальный элемент равен " << min << "\n";
+    
     pr.set_value(min);
+    
     return min;
+}
+
+void sort_arr(int *arr, int size) {
+    int i, j, min_i;
+    for (i = 0; i < size - 1; i++) {
+        
+        std::promise<int> pr;
+        std::future<int> ft = pr.get_future();
+        auto res = std::async(min_el, std::ref(arr), size, i, std::ref(pr));
+        ft.wait();
+        auto min = ft.get();
+        min_i = i;
+        for (j = i + 1; j < size; j++) {
+            if (arr[j] < arr[min_i]) {
+                min_i = j;
+            }
+        }
+        
+        if(min_i != i) {
+            std::cout << "Если индекс начала поиска равен " << i << ", то выталкиваем наименьший элемент " << arr[min_i] << "\n";
+            std::swap(arr[min_i],arr[i]);
+        }
+    }
 }
 
 int main(int argc, const char * argv[]) {
@@ -57,17 +66,7 @@ int main(int argc, const char * argv[]) {
     for(int i = 0; i < size; i++) {
         std::cout << arr[i] << " ";
     }
-    
-    std::promise<int> pr;
-    std::future<int> ft = pr.get_future();
-    auto res = std::async(min_el, std::ref(arr), size, 0, std::ref(pr));
-    ft.wait();
-    auto min = ft.get();
-    std::cout << "\n";
-    std::cout << "Наименьший элемент: " << min << "\n";
-    
-    
-    
-    
+
+
     return 0;
 }
